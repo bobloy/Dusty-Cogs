@@ -220,7 +220,7 @@ class Autorole:
 
         server = ctx.message.server
         self.settings[server.id]["ROLE"] = [role.id for role in roles]
-        await self.bot.say("Autorole set to {}".format(role.name for role in roles))
+        await self.bot.say("Autorole set to {}".format([role.name for role in roles]))
         dataIO.save_json(self.file_path, self.settings)
 
     @autorole.command(pass_context=True, no_pm=True)
