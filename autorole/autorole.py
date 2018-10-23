@@ -58,16 +58,16 @@ class Autorole:
 
         try:
             if message.content == self.users[user.id]:
-                roleid = self.settings[server.id]["ROLE"]
+                role_list = self.settings[server.id]["ROLE"]
                 try:
-                    roles = server.roles
+                    server_roles = server.roles
                 except AttributeError:
                     print("This server has no roles... what even?\n")
                     return
 
-                role = discord.utils.get(roles, id=roleid)
+                roles = [discord.utils.get(server_roles, id=roleid) for roleid in role_list]
                 try:
-                    await self.bot.add_roles(user, role)
+                    await self.bot.add_roles(user, *roles)
                     await self.bot.delete_message(message)
                     if user.id in self.messages:
                         self.messages.pop(user.id, None)
@@ -109,16 +109,16 @@ class Autorole:
     async def _auto_give(self, member):
         server = member.server
         try:
-            roleid = self.settings[server.id]["ROLE"]
-            roles = server.roles
+            role_list = self.settings[server.id]["ROLE"]
+            server_roles = server.roles
         except KeyError:
             return
         except AttributeError:
             print("This server has no roles... what even?\n")
             return
-        role = discord.utils.get(roles, id=roleid)
+        roles = [discord.utils.get(server_roles, id=roleid) for roleid in role_list]
         try:
-            await self.bot.add_roles(member, role)
+            await self.bot.add_roles(member, *roles)
         except discord.Forbidden:
             if server.id in self.settings:
                 await self._no_perms(server)
@@ -210,13 +210,17 @@ class Autorole:
 
     @autorole.command(pass_context=True, no_pm=True)
     @checks.admin_or_permissions(manage_roles=True)
-    async def role(self, ctx, role: discord.Role):
+    async def role(self, ctx, *roles: discord.Role):
         """Set role for autorole to assign.
 
         Use quotation marks around the role if it contains spaces."""
+        if not roles:
+            await self.bot.say("No roles provided")
+            return
+
         server = ctx.message.server
-        self.settings[server.id]["ROLE"] = role.id
-        await self.bot.say("Autorole set to " + role.name)
+        self.settings[server.id]["ROLE"] = [role.id for role in roles]
+        await self.bot.say("Autorole set to {}".format(role.name for role in roles))
         dataIO.save_json(self.file_path, self.settings)
 
     @autorole.command(pass_context=True, no_pm=True)
